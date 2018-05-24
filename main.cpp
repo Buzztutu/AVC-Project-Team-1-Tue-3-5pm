@@ -13,17 +13,8 @@
 	#define CAMERA_HEIGHT 240 //Control Resolution from Camera
 	#define MOTOR_SPEED 150 //Set motor speed
 	
-//Quadrant Boolean
-//Defined Boolean values
-	typedef int bool;
-	#define true 1
-	#define false 0
-	
 //Quadrant Setup
-	bool Q1 = true;
-	bool Q2 = true;
-	bool Q3 = false;
-	bool Q4 = false;
+	int Quad = 1;
 	
 //Variable Setup for Q2 & Q3
 	int error = 0;
@@ -41,7 +32,7 @@
  unsigned char pixels_buf[CAMERA_WIDTH*CAMERA_HEIGHT*4];
 int main() {
 /** ~ Quadrant 1 - Network Gate ~ **/
-	while (Q1 = true) {
+	while (Quad = 1) {
 	//Server and port specification
 		char serverIP [15]= "130.195.6.196"; 
 		int Port = 1024;
@@ -51,11 +42,13 @@ int main() {
 		send_to_server(message); //Send password request
 		receive_from_server(message); //Recieve password
 		send_to_server(message); //Send password
+		
+		Quad++;
 		}
 /** ~ End of Q1 ~ **/
 
 /** ~ Quadrant 2 - Follow Line ~ **/
-	while (Q2 = true){
+	while (Quad = 2){
 	void followLine(int error, int dv) // set motors based on the derivative of PID controller 
 	{
 	//Take picture
