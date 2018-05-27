@@ -213,7 +213,7 @@ int main()
 				set_motor(2,128);
 				sleep1(0,1 );
 				bool straight= true;
-				while(straight==true)
+				while(straight)
 				{	
 					straight= true;
 					printf("Go Straight");
@@ -237,6 +237,10 @@ int main()
 						{
 							min =pix;
 						}
+
+						//orange detection
+
+
 					}
 					int threshold = (max+min)/2; // set the threshold for black and white pixels
 					//printf(" min=%d max=%d threshold=%d\n", min, max,threshold);
@@ -305,9 +309,18 @@ int main()
             {
                 min =pix;
             }
+
+            if(get_pixel(scan_row, i, 0) > ((max - min) / 2) + min && get_pixel(scan_row, i, 1) > min && get_pixel(scan_row, i, 2) < min) {
+                quadrant = 4;
+            }
         }
         int threshold = (max+min)/2; // set the threshold for black and white pixels
         printf(" min=%d max=%d threshold=%d\n", min, max,threshold);
+
+
+        if(quadrant = 4) {
+            break;
+        }
 
         int whitePixels[320];  // white pixels
         for (int i = 0; i <320;i++)
@@ -397,13 +410,28 @@ int main()
 					
 			
 			case 4: // Quadrant 4
-			{
-				while(true)
-				{
-					
-					
-				}
-			}
+				while(true) {
+                    int left = 0; //read_analog(1)
+                    int right = 0; //read_analog(0)
+
+                    //readings from sensors
+                    for(int i = 0; i < 10; i++) {
+                        left += read_analog(1);
+                        right += read_analog(0);
+                    }
+
+                    left = left / 10;
+                    right = right / 10;
+
+                    //going straight (jittery af)
+                    if(left < right) {
+                        set_motor(1, 128);
+                        set_motor(2, -192);
+                    } else if (right < left) {
+                        set_motor(1, 192);
+                        set_motor(2, 128);
+                    }
+                }
 		return 0;	
 	}
 }
