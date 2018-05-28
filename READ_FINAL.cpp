@@ -15,6 +15,15 @@ int MOTOR_SPEED=70;
 //#define MOTOR_SPEED 70
 unsigned char pixels_buf[CAMERA_WIDTH*CAMERA_HEIGHT*4];
 
+void turn(multiplyer) {
+    set_motor(1, -128 * multiplier);
+    set_motor(2, -128 * multiplier);
+    sleep1(2, 0);
+    set_motor(1, 128); //go forward small amount
+    set_motor(2, -128);
+    sleep(2, 0);
+}
+
 void followLine(int error, int dv, bool black, int quadrant) // set motors based on the derivative of PID con$
 {
 	if (quadrant==3){
@@ -273,9 +282,8 @@ int main()
 				}
 				
 				bool turning= false;
-				while(true){
-
-						if (turning ==false){
+				while(true) {
+						if(!turning) {
 							sleep1(1,0);
 							printf("LEFT");
 							set_motor(1,-128);
@@ -286,7 +294,8 @@ int main()
 					take_picture();
 		//display_picture(1,0);
         int scan_row = 120;
-	bool black= false;
+	    bool black = false;
+
         for (int i = 0; i <320;i++)
         {
             int pix = get_pixel(scan_row,i,3);
@@ -431,9 +440,17 @@ int main()
                         set_motor(1, 192);
                         set_motor(2, 128);
                     }
+
+                    //turning
+                    if(read_analog(2) > 300) {
+                        if(read_analog(1) > 300) { //turning right
+                            turn(-1);
+                        } else { //turning left
+                            turn(1);
+                        }
+                    }
                 }
-		return 0;	
+		return 0;
 	}
 }
     
-
