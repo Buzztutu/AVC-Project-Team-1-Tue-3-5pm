@@ -8,21 +8,16 @@
 #include <sys/time.h>
 #include "E101.h"
 
+// Networking
+char serverIP [15]= "130.195.6.196";
+int Port = 1024;
+char message [24]= "Please";
 
 #define CAMERA_WIDTH 320 //Control Resolution from Camera
 #define CAMERA_HEIGHT 240 //Control Resolution from Camera
 int MOTOR_SPEED=70;
 //#define MOTOR_SPEED 70
 unsigned char pixels_buf[CAMERA_WIDTH*CAMERA_HEIGHT*4];
-
-void turn(multiplyer) {
-    set_motor(1, -128 * multiplier);
-    set_motor(2, -128 * multiplier);
-    sleep1(2, 0);
-    set_motor(1, 128); //go forward small amount
-    set_motor(2, -128);
-    sleep(2, 0);
-}
 
 void followLine(int error, int dv, bool black, int quadrant) // set motors based on the derivative of PID con$
 {
@@ -85,7 +80,11 @@ int main()
     {
 			case 1: // Quadrant 1
 			{
-				
+				connect_to_server(serverIP,Port);
+				send_to_server(message);
+				receive_from_server(message);
+				send_to_server(message);
+				quadrant = 2;
 		
 			}
 			
@@ -170,7 +169,7 @@ int main()
                     gettimeofday(&t2, 0); // mark time now
                     long elapsed = (t2.tv_sec - t1.tv_sec)*1000000+(t2.tv_usec - t1.tv_usec);
                     printf("Time = %d\n", elapsed);                        
-
+			printf("Before Np is: %d \n", np);
                     for (int i = 0; i < 320; i++) // do for each pixel in r
                     {
 						error = error + (i - 160)*whitePixels[i];
@@ -185,10 +184,13 @@ int main()
                     {
                         error = error/np;
                     }
-                    if (np >250){
+                    if (np >220&&np<320){
 			
-                        error=40;
+                        error=0;
                     }
+		else if(np>200&&np<220){
+			error=40;
+		}
 
                     //printf("error is %d\n", error);
                     //printf("Error: %d \n" , error); 
@@ -205,10 +207,13 @@ int main()
 
 					printf("dv is %d\n", dv);
 					if (white==true){
+						
 						quadrant=3;
 						break;
 					}
-					followLine(error, dv, black, quadrant);
+					else{
+						followLine(error, dv, black, quadrant);
+					}
 					
 					
 					
@@ -218,11 +223,13 @@ int main()
 			
 			case 3: // Quadrant 3
 			{
-				set_motor(1,-128);
-				set_motor(2,128);
-				sleep1(0,1 );
+				printf("Quadrant 3");
+
+				set_motor(1,-100);
+				set_motor(2,100);
+				sleep1(3,0);
 				bool straight= true;
-				while(straight)
+				while(straight==true)
 				{	
 					straight= true;
 					printf("Go Straight");
@@ -230,8 +237,8 @@ int main()
 					//display_picture(1,0);
 					int scan_row = 120;
 					bool black= false;
-					set_motor(1,-100);
-					set_motor(2,100);
+					set_motor(1,-70);
+					set_motor(2,70);
 					
 					int max = 0;
 					int min =255;
@@ -246,10 +253,7 @@ int main()
 						{
 							min =pix;
 						}
-
-						//orange detection
-
-
+						
 					}
 					int threshold = (max+min)/2; // set the threshold for black and white pixels
 					//printf(" min=%d max=%d threshold=%d\n", min, max,threshold);
@@ -264,7 +268,7 @@ int main()
 							whitePixels[i] = 0;
 							black=true;
 						}
-						if(min>90){
+						else if(min>70){
 							whitePixels[i]=1;
 							straight=false;
 							printf("Straight is false");
@@ -282,20 +286,22 @@ int main()
 				}
 				
 				bool turning= false;
-				while(true) {
-						if(!turning) {
-							sleep1(1,0);
+				while(true){
+				printf("TRUE");
+
+						if (turning ==false){
+							
 							printf("LEFT");
-							set_motor(1,-128);
-							set_motor(2, -128);
+							set_motor(1,128);
+							set_motor(2, 128);
+							sleep1(0,5000);
 							turning= true;
 						}
 						
 					take_picture();
 		//display_picture(1,0);
         int scan_row = 120;
-	    bool black = false;
-
+	bool black= false;
         for (int i = 0; i <320;i++)
         {
             int pix = get_pixel(scan_row,i,3);
@@ -318,18 +324,14 @@ int main()
             {
                 min =pix;
             }
-
-            if(get_pixel(scan_row, i, 0) > ((max - min) / 2) + min && get_pixel(scan_row, i, 1) > min && get_pixel(scan_row, i, 2) < min) {
-                quadrant = 4;
-            }
+		/*if(get_pixel(scan_row, i, 0) > ((max - min) / 2) + min && get_pixel(scan_row, i, 1) > min &&
+		 get_pixel(scan_row, i, 2) < min) {
+               		 quadrant = 4;
+			break;
+            }*/
         }
         int threshold = (max+min)/2; // set the threshold for black and white pixels
         printf(" min=%d max=%d threshold=%d\n", min, max,threshold);
-
-
-        if(quadrant = 4) {
-            break;
-        }
 
         int whitePixels[320];  // white pixels
         for (int i = 0; i <320;i++)
@@ -340,7 +342,7 @@ int main()
 				whitePixels[i] = 0;
 		black=true;
 			}
-			if(min>100){
+			if(min>90){
 				turning=false;
 			}
             
@@ -365,12 +367,12 @@ int main()
 						previousError = previousError + (i - 160)*whitePixels[i];
 						if (whitePixels[i] == 1)
 						{
-							np = np + 1;
+						np = np+1;												
 						}
 					}
-					if (np !=0){
+					/*if (np !=0){
 						previousError = previousError/np;
-					}
+					}*/
 					printf("Previous Error: %d",previousError); 
 					struct timeval t1;
 					struct timeval t2; //structure with time
@@ -382,27 +384,37 @@ int main()
 					long elapsed = (t2.tv_sec - t1.tv_sec)*1000000+(t2.tv_usec - t1.tv_usec);
 					printf("Time = %d\n", elapsed);					
 
+					printf("Before Np is %d \n", np);
 					for (int i = 0; i < 320; i++) // do for each pixel in row
 					{
 						error = error + (i - 160)*whitePixels[i];
 						if (whitePixels[i] == 1)
 						{
-							np = np + 1;
+							//np = np + 1;
 						}
 					}
 					
 					printf("Np is: %d", np);
-					if (np !=0){
-						error = error/np;
+					bool turning2= false;
+					if (np >220&&np<300){
+						printf("Np is greater than 250\n");
+						if (error>0){
+							error=40;
+							turning2= true;
+						}
+						else if(error<0){
+							error=-40;
+							turning2=true;
+						}
 					}
-					if (np >250){
-						error=20;
+					else if (np!= 0) {
+						error= error/np;
 					}
                                         
 					
 
 					printf("error is %d\n", error);
-					double kp = 4;//change kp so robot can follow the line
+					double kp = 5;//change kp so robot can follow the line
 					double kd = 0;//change kd until the movement is smooth
 					double derivative = (error - previousError)/(elapsed);
 					int dv = error*kp + derivative*kd;
@@ -410,6 +422,9 @@ int main()
 			printf("dv is %d\n", dv);
 			if (turning==true){
 			followLine(error, dv, black, quadrant);
+			if (turning2==true){
+				sleep1(0,500000);
+			}
 		}
 			
     
@@ -419,38 +434,16 @@ int main()
 					
 			
 			case 4: // Quadrant 4
-				while(true) {
-                    int left = 0; //read_analog(1)
-                    int right = 0; //read_analog(0)
-
-                    //readings from sensors
-                    for(int i = 0; i < 10; i++) {
-                        left += read_analog(1);
-                        right += read_analog(0);
-                    }
-
-                    left = left / 10;
-                    right = right / 10;
-
-                    //going straight (jittery af)
-                    if(left < right) {
-                        set_motor(1, 128);
-                        set_motor(2, -192);
-                    } else if (right < left) {
-                        set_motor(1, 192);
-                        set_motor(2, 128);
-                    }
-
-                    //turning
-                    if(read_analog(2) > 300) {
-                        if(read_analog(1) > 300) { //turning right
-                            turn(-1);
-                        } else { //turning left
-                            turn(1);
-                        }
-                    }
-                }
-		return 0;
+			{
+				while(true)
+				{
+					set_motor(1, -60);
+					set_motor(2, 60);
+					
+				}
+			}
+		return 0;	
 	}
 }
     
+
